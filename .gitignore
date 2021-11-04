@@ -1,0 +1,5 @@
+config.json
+__pycache__/
+/protocol_handler/bin/
+/protocol_handler/build/
+/protocol_handler/*.spec

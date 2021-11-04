@@ -1,0 +1,1 @@
+pyinstaller.exe -F .\src\GimmeYT.py --distpath .\bin\ -i .\res\GimmeYT.ico
