@@ -1,0 +1,16 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\GimmeYT]
+@="URL:ABKs YouTube Mod Protocol"
+"URL Protocol"=""
+
+[HKEY_CLASSES_ROOT\GimmeYT\DefaultIcon]
+@="\"<REPLACE_ME_WITH_PROJECT_PATH>\yt-mod\GimmeYT.ico""
+
+[HKEY_CLASSES_ROOT\GimmeYT\shell]
+
+[HKEY_CLASSES_ROOT\GimmeYT\shell\open]
+
+[HKEY_CLASSES_ROOT\GimmeYT\shell\open\command]
+@="\"<REPLACE_ME_WITH_PROJECT_PATH>\\yt-mod\\protocol_handler\\bin\\GimmeYT.exe\" \"%1\""
+
