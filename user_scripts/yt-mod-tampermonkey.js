@@ -2,7 +2,7 @@
 // @name         ABK's YT-Mod
 // @namespace    https://github.com/BluABK/yt-mod
 // @version      0.5
-// @description  Enhance your YouTube experience.
+// @description  Enchance your YouTube experience.
 // @author       BluABK
 // @match        https://www.youtube.com/feed/subscriptions*
 // @grant        none
@@ -13,6 +13,22 @@
 (function() {
     'use strict';
 
+    /**
+     * CONFIG
+     */
+    const CONFIG = {
+        dimClickedVideos: true,
+        customProto: "GimmeYT",
+        customProtoHrefOnVideoThumbnail: true,
+        customProtoHrefOnVideoTitle: false,
+        colouriseVideoTiles: true
+    };
+
+    // Constants / Common properties.
+    const VIDEO_TILE_TAG_NAME = "YTD-GRID-VIDEO-RENDERER";
+    const VIDEO_TILE_THUMBNAIL_TAG_NAME = "YTD-THUMBNAIL";
+
+    // Helpers
     const COLORS =
         ['#80ED12', '#A5D604', '#C7B601', '#E39209', '#F66C1C', '#FE4838', '#FB295B', '#ED1180',
         '#D504A6', '#B601C8', '#910AE3', '#6B1DF6', '#4739FE', '#285BFB', '#1181ED', '#03A6D5',
@@ -21,6 +37,9 @@
         '#691EF7', '#453BFE', '#275DFB', '#1083EC', '#03A8D3', '#01CAB3', '#0BE58F', '#1FF769',
         '#3BFE45', '#5EFA26', '#84EB0F', '#A9D303', '#CBB301', '#E68E0B', '#F7681F', '#FE443C',
         '#FA265F', '#EB0F84']; // 50 total
+
+    // List to store video tiles
+    let videoTiles = [];
 
     function RGB2Color(r,g,b) {
         return 'rgb(' + Math.round(r) + ',' + Math.round(g) + ',' + Math.round(b) + ')';
@@ -45,15 +64,116 @@
     }
     */
 
-    function dimVideoTile(videoTile) {
-        videoTile.style.opacity = 0.05;
+    function isVideoTile(jNode) {
+         return jNode.tagName === VIDEO_TILE_TAG_NAME;
     }
 
+    /**
+     * Throws exception if object's tag name is not what is expected.
+     * @param obj Object to check tag name of.
+     * @param tag Tag name (string) to ensure.
+     */
+    function ensureTagIs(obj, tag) {
+        if (obj.tagName !== tag)
+        {
+            console.error(`Object was not of expected tag '${tag}'!`, obj)
+            throw new Error(`Object was not of expected tag '${tag}'!`);
+        }
+    }
+
+    /**
+     * Acquire handles to stuff we want to manipulate.
+     * @param eventTarget
+     */
+    function getTileHandles(eventTarget) {
+        if (eventTarget == null) {
+            console.error(`event target was null or undefined!`, eventTarget);
+            throw new Error(`event target was null or undefined!`);
+        }
+
+        let videoThumbnail = eventTarget;
+        let currentTagName = eventTarget.tagName;
+
+        while (currentTagName !== VIDEO_TILE_THUMBNAIL_TAG_NAME) {
+            // Traverse up the stack until the desired element is found.
+            if (videoThumbnail.parentElement != null) {
+                videoThumbnail = videoThumbnail.parentElement;
+                currentTagName = videoThumbnail.tagName;
+            } else {
+                // In case of null we've likely traveled up the entire stack, but not found a match.
+                console.error(`Video thumbnail was null or no occurrence of ${VIDEO_TILE_THUMBNAIL_TAG_NAME} found while traversing stack of event target!`, eventTarget);
+                throw new Error(`Video thumbnail was null or no occurrence of ${VIDEO_TILE_THUMBNAIL_TAG_NAME} found while traversing stack of event target!`);
+            }
+        }
+
+        //let videoThumbnail = event.originalTarget.parentElement.parentElement.parentElement.parentElement; // ytd-thumbnail
+        let videoDismissible = videoThumbnail.parentElement; // div id="dismissible", container element for tile content.
+        let videoTile = videoThumbnail.parentElement.parentElement; // div id="items" class="style-scope ytd-gid-renderer"
+        //let videoTiles = videoDismissible.parentElement.parentElement; // div id="items" class="style-scope ytd-gid-renderer"
+
+        return {
+            tileThumbnail: videoThumbnail,
+            tileContent: videoDismissible,
+            tile: videoTile
+        };
+    }
+
+    function getVideoTiles() {
+        return videoTiles;
+    }
+
+    function listVideoTiles() {
+        for (let i = 0; i < videoTiles.length; i++) {
+            console.log(`videoTile #${i}`, videoTiles[i]);
+        }
+    }
+
+    /**
+     * Dims the video tile.
+     * @param videoTile ytd-grid-video-renderer HTMLElement
+     * @param opacity
+     */
+    function dimVideoTile(videoTile, opacity = 0.25) {
+        ensureTagIs(videoTile, VIDEO_TILE_TAG_NAME);
+        videoTile.style.opacity = opacity.toString();
+    }
+
+    /**
+     * Hides the video tile.
+     * @param videoTile ytd-grid-video-renderer HTMLElement
+     */
     function hideVideoTile(videoTile) {
+        ensureTagIs(videoTile, VIDEO_TILE_TAG_NAME);
         videoTile.style.display = "none";
     }
 
+    /**
+     * Shows the video tile.
+     * @param videoTile ytd-grid-video-renderer HTMLElement
+     */
+    function showVideoTile(videoTile) {
+        ensureTagIs(videoTile, VIDEO_TILE_TAG_NAME);
+        videoTile.style.display = "block";
+    }
+
+    /**
+     *  Hide/Unhides the video tile.
+     * @param videoTile ytd-grid-video-renderer HTMLElement
+     */
+    function toggleVisibility(videoTile) {
+        ensureTagIs(videoTile, VIDEO_TILE_TAG_NAME);
+        videoTile.style.display !== "none" ? videoTile.style.display = "none" : videoTile.style.display = "block";
+    }
+
+    /**
+     * Removes video tile from feed (built-in).
+     *
+     * NB: There is no simple way to undo this,
+     * it is removed from its parent using a provided built-in function.
+     * @param videoTile
+     */
     function removeVideoTile(videoTile) {
+        ensureTagIs(videoTile, VIDEO_TILE_TAG_NAME);
         videoTile.remove();
     }
 
@@ -61,15 +181,20 @@
         // console.log("event", event);
 
         if (event.which === 2) {
-            console.log(`Handling ${event.type} for video`, event.target);
+            console.log(`Handling ${event.type} for video`, event, event.originalTarget);
 
-            // Make a handled video tile stand out, so it's easier to distinguish.
-            let videoThumbnail = event.originalTarget.parentElement.parentElement.parentElement.parentElement;
-            let videoDismissable = videoThumbnail.parentElement;
-            let videoTile = videoDismissable.parentElement.parentElement;
+            // Acquire handles to stuff we want to manipulate.
+            // let videoThumbnail = event.originalTarget.parentElement.parentElement.parentElement.parentElement; // ytd-thumbnail
+            // let videoDismissible = videoThumbnail.parentElement; // div id="dismissible"
+            // let videoTile = videoDismissible.parentElement; // div id="items" class="style-scope ytd-gid-renderer"
+            // let videoTiles = videoDismissible.parentElement.parentElement; // div id="items" class="style-scope ytd-gid-renderer"
+            let videoTileHandles = getTileHandles(event.originalTarget);
 
-            // Dim the video.
-            dimVideoTile(videoThumbnail.parentElement);
+            // Make a handled video tile stand out, so it's easier to distinguish:
+            if (CONFIG.dimClickedVideos) {
+                // - Dim the video.
+                dimVideoTile(videoTileHandles.tile);
+            }
          }
     }
 
@@ -80,13 +205,14 @@
         let colorCounter = 0;
         for (let videoTile of items.children) {
             //console.log("videoTile", videoTile);
+            videoTiles.push(videoTile);
 
             // Beautiful rainbow colouring (primarily for debug purposes).
             if (colorCounter > COLORS.length) {
                 colorCounter = 0;
             }
 
-            videoTile.style.background = COLORS[colorCounter] + "20"; // color + alpha
+            if (CONFIG.colouriseVideoTiles) videoTile.style.background = COLORS[colorCounter] + "20"; // color + alpha
 
             // A video tile has a list of dismissed and dismissible (dismissed isn't needed at this time, so skipped.).
             let dismissible = videoTile.children.dismissible;
@@ -114,15 +240,19 @@
             // events as most browsers do fire mousedown and mouseup events for any mouse button.
             videoThumb.addEventListener("mousedown", handleVideoThumbMouseDown, true);
 
-            // Get the video ID.
-            let reSearchVideoId = /\?v=(.*)/;
-            let videoId = videoThumb.search.match(reSearchVideoId)[1];
+            if (CONFIG.customProtoHrefOnVideoThumbnail || CONFIG.customProtoHrefOnVideoTitle) {
+                // Get the video ID.
+                let reSearchVideoId = /\?v=(.*)/;
+                let videoId = videoThumb.search.match(reSearchVideoId)[1];
 
-            // Redirect the <a href>.
-            videoThumb.setAttribute('href', `GimmeYT:${videoId}`);
-            //console.log("videoTitle", videoTitle);
-            //videoTitle.setAttribute('href', `GimmeYT:${videoId}`);
-
+                // Redirect the <a href>.
+                if (CONFIG.customProtoHrefOnVideoThumbnail) {
+                    videoThumb.setAttribute('href', `${CONFIG.customProto}:${videoId}`);
+                }
+                if (CONFIG.customProtoHrefOnVideoTitle) {
+                    videoTitle.setAttribute('href', `${CONFIG.customProto}:${videoId}`);
+                }
+            }
             colorCounter++;
         }
     }
@@ -178,7 +308,6 @@
     // Wait for all video tiles to load before executing own code.
     waitForKeyElements('ytd-grid-renderer.style-scope', parseSubfeed);
 
-
     /**
      * YT-Mod API
      *
@@ -188,6 +317,12 @@
     var YTMod = window.YTMod = {};
 
     // Exposed API
+    YTMod.CONIFG = CONFIG;
+    YTMod.videoTiles = videoTiles;
+    YTMod.toggleVisibility = toggleVisibility;
+    YTMod.showVideoTile = showVideoTile;
+    YTMod.hideVideoTile = hideVideoTile;
     YTMod.dimVideoTile = dimVideoTile;
+    YTMod.listVideoTiles = listVideoTiles;
 
 })();
