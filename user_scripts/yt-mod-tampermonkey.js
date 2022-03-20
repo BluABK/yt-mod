@@ -273,8 +273,8 @@
         // Get the video ID.
         let videoId;
         let href = videoThumbnail.href.toString();
-        console.info("href", href);
-        let reSearchVideoId = /\?v=(.*)/;
+        //console.info("href", href);
+        let reSearchVideoId = /\?v=|shorts\/(.*)/;
         let match = href.match(reSearchVideoId); // [1];
         if (match) {
             // Unmodified YouTube URL.
@@ -413,6 +413,12 @@
 
             // Acquire handles to stuff we want to manipulate.
             // FIXME: Should probably make getTileHandles handle video tile as argument instead of needing to pass its thumbnail.
+            // "Handle" issue with children not having a dismissible key.
+            if (videoTileElement.children.dismissible == null) {
+                console.error("videoTileElement.children.dismissible == null", videoTileElement.children);
+                console.error("videoTileElement.children.dismissible == null", videoTileElement);
+                continue;
+            }
             let videoTileHandles = getTileHandles(videoTileElement.children.dismissible.children[0].children[0]);
             let videoId = videoTileHandles.videoId;
             //console.info("videoTileHandles", videoTileHandles);
