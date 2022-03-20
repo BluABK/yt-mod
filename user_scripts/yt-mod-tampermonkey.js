@@ -276,7 +276,7 @@
         //console.info("href", href);
         let reSearchVideoId = /(\?v=|shorts\/)(.*)/;
         let match = href.match(reSearchVideoId); // [1];
-        console.info("match", match);
+        //console.info("match", match);
         if (match) {
             // Unmodified YouTube URL.
             videoId = match[match.length - 1];
