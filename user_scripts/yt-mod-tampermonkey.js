@@ -274,11 +274,12 @@
         let videoId;
         let href = videoThumbnail.href.toString();
         //console.info("href", href);
-        let reSearchVideoId = /\?v=|shorts\/(.*)/;
+        let reSearchVideoId = /(\?v=|shorts\/)(.*)/;
         let match = href.match(reSearchVideoId); // [1];
+        console.info("match", match);
         if (match) {
             // Unmodified YouTube URL.
-            videoId = match[1];
+            videoId = match[match.length - 1];
         } else {
             // Modified custom proto URL.
             let prefix = `${CONFIG.customProto}:`.toLowerCase();
